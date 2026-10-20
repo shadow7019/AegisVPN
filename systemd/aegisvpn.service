@@ -1,0 +1,44 @@
+# AegisVPN engine daemon — systemd unit.
+#
+# Runs the real engine (WireGuard TUN + routing/kill-switch takeover) as a
+# root service because it must create /dev/net/tun devices and own the
+# system routing/firewall tables. The control API is served on the unix
+# socket $STATE_DIRECTORY/engine.sock (non-Windows transport, see
+# docs/PROTOCOL.md §2); the CLI and GUIs talk to it as unprivileged users.
+#
+#   sudo ./install.sh          → copies + enables this unit
+#   journalctl -u aegisvpn -f  → follow the engine log
+#   aegisvpn status            → status JSON through the socket
+
+[Unit]
+Description=AegisVPN engine daemon (real WireGuard tunnel)
+Documentation=https://github.com/shadow7019/AegisVPN
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/aegisvpn daemon --root /var/lib/aegisvpn
+Restart=on-failure
+RestartSec=3
+
+# --- device access for the TUN interface ---
+DeviceAllow=/dev/net/tun rw
+
+# --- hardening: keep root only where the engine needs it ---
+ProtectSystem=strict
+ReadWritePaths=/var/lib/aegisvpn /etc/resolv.conf /etc/netplan /etc/sysctl.d
+ProtectHome=yes
+PrivateTmp=yes
+ProtectKernelTunables=no      # engine writes sysctls for source-valid-mark
+ProtectControlGroups=no       # engine manages net cls/cgroup for split tunnel
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+LimitNOFILE=65536
+
+# --- survivability semantics ---
+# Kill switch rules persist until explicit disconnect or unit stop; the
+# engine installs its lockdown rules with the tunnel, not at boot.
+TimeoutStopSec=10
+
+[Install]
+WantedBy=multi-user.target

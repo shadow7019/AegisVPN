@@ -30,3 +30,10 @@ node_modules/
 # Misc
 .DS_Store
 *.log
+
+# compiled artifacts that CI / build scripts produce (do not track)
+gui/desktop/desktop
+server/obfsd/obfsd
+server/relay/relay
+server/smartdns/smartdns
+server/threatdns/threatdns

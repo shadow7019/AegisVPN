@@ -1,0 +1,11 @@
+# Real fleet definition (contains hostnames/IPs) — keep out of git.
+fleet.conf
+
+# Generated per-environment values sourced by operators.
+env
+
+# Runtime artifacts.
+logs/
+peers/
+*.log
+*.rc

@@ -1,0 +1,82 @@
+<UserControl x:Class="AegisVPN.Wpf.Views.MeshnetView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0" Margin="0,0,0,12">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Meshnet" Style="{StaticResource H1Style}"/>
+                <Button Content="⟳ Refresh" Margin="16,4,0,0" VerticalAlignment="Center"
+                        Style="{StaticResource GhostButtonStyle}"
+                        Command="{Binding RefreshCommand}"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- register this device -->
+        <Border Grid.Row="1" Style="{StaticResource CardStyle}" Margin="0,0,0,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBox Style="{StaticResource DarkTextBoxStyle}" MinWidth="280" HorizontalAlignment="Left"
+                         Text="{Binding DeviceName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                <Button Grid.Column="1" Content="Register this device" Margin="12,0,0,0"
+                        Style="{StaticResource PrimaryButtonStyle}"
+                        Command="{Binding RegisterCommand}"/>
+            </Grid>
+        </Border>
+
+        <!-- peers -->
+        <ListBox Grid.Row="2" Style="{StaticResource FlatListBoxStyle}"
+                 ItemsSource="{Binding Peers}">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <Grid Margin="10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Ellipse Width="9" Height="9" VerticalAlignment="Center" Margin="0,0,12,0">
+                            <Ellipse.Style>
+                                <Style TargetType="Ellipse">
+                                    <Setter Property="Fill" Value="{StaticResource TextMutedBrush}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Online}" Value="True">
+                                            <Setter Property="Fill" Value="{StaticResource GreenBrush}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Ellipse.Style>
+                        </Ellipse>
+
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding DeviceName}" FontFamily="Segoe UI" FontSize="14"
+                                       FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
+                            <TextBlock Style="{StaticResource MutedStyle}">
+                                <Run Text="{Binding Address, Mode=OneWay, TargetNullValue=unknown}"/>
+                                <Run Text="{Binding Endpoint, Mode=OneWay, TargetNullValue=''}"/>
+                            </TextBlock>
+                        </StackPanel>
+
+                        <Border Grid.Column="2" Style="{StaticResource ChipBorder}">
+                            <TextBlock FontSize="10" Style="{StaticResource MutedStyle}">
+                                <TextBlock.Text>
+                                    <Binding Path="Pubkey" StringFormat="key {0}" FallbackValue="key —"/>
+                                </TextBlock.Text>
+                            </TextBlock>
+                        </Border>
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+    </Grid>
+</UserControl>

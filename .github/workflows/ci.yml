@@ -1,0 +1,152 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  # ─────────────────────────────────────────────── engine (cross-platform) ──
+  engine:
+    name: engine ${{ matrix.goos }}/${{ matrix.goarch }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { goos: linux,   goarch: amd64 }
+          - { goos: linux,   goarch: arm64 }
+          - { goos: windows, goarch: amd64 }
+          - { goos: windows, goarch: arm64 }
+          - { goos: darwin,  goarch: amd64 }
+          - { goos: darwin,  goarch: arm64 }
+    defaults:
+      run:
+        working-directory: engine
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+          cache-dependency-path: engine/go.sum
+      - name: Vet
+        run: go vet ./...
+      - name: Build
+        run: go build -trimpath -o "../dist/aegisvpn-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goos == 'windows' && '.exe' || '' }}" ./cmd/aegisvpn
+
+  # ─────────────────────────────────────────────── server services ──────────
+  servers:
+    name: server services
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [coord, relay, obfsd, threatdns, smartdns]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+          cache-dependency-path: server/${{ matrix.service }}/go.sum
+      - name: Build
+        run: go build -trimpath ./...
+        working-directory: server/${{ matrix.service }}
+
+  # ─────────────────────────────────────────────── shell scripts ────────────
+  shell:
+    name: bash syntax (deploy + systemd)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: bash -n all scripts
+        run: |
+          set -e
+          for f in deploy/*.sh systemd/*.sh scripts/*.sh; do
+            bash -n "$f"
+            echo "OK  $f"
+          done
+
+  # ─────────────────────────────────────────────── native WPF GUI ───────────
+  wpf:
+    name: windows WPF GUI
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Publish WPF app
+        run: dotnet publish windows/wpf/AegisVPN.Wpf -c Release -r win-x64 -p:PublishSingleFile=true --self-contained false
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AegisVPN-wpf
+          path: windows/wpf/AegisVPN.Wpf/bin/Release/net8.0-windows/win-x64/publish/
+
+  # ─────────────────────────────────────────────── wails cross-gui ──────────
+  wails-gui:
+    name: wails desktop gui
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: gui/desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+          cache-dependency-path: gui/desktop/go.sum
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Build frontend
+        run: |
+          cd frontend
+          bun install --frozen-lockfile || bun install
+          bun run build
+      - name: Build Go backend (linux)
+        run: go build ./...
+
+  # ─────────────────────────────────────────────── android ─────────────────
+  android:
+    name: android apk
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+          cache-dependency-path: engine/go.sum
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: gomobile bind (aegislib.aar)
+        run: |
+          go install golang.org/x/mobile/cmd/gomobile@latest
+          gomobile init
+          cd engine
+          gomobile bind -target=android -o ../android/app/libs/aegislib.aar ./cmd/aegislib
+      - name: Gradle assembleDebug
+        run: |
+          cd android
+          chmod +x gradlew 2>/dev/null || true
+          if [ -f gradlew ]; then ./gradlew assembleDebug; else gradle assembleDebug; fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AegisVPN-android-debug
+          path: android/app/build/outputs/apk/debug/*.apk
+
+  # ─────────────────────────────────────────────── macos app ────────────────
+  macos:
+    name: macos swiftui app
+    runs-on: macos-latest
+    continue-on-error: true   # XcodeGen project generation is best-effort on CI
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install xcodegen
+        run: brew install xcodegen
+      - name: Generate + build
+        run: |
+          cd macos
+          xcodegen generate
+          xcodebuild -project AegisVPN.xcodeproj -scheme AegisVPN -configuration Release build CODE_SIGNING_ALLOWED=NO

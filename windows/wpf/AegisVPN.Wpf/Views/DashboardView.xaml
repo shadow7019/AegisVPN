@@ -1,0 +1,198 @@
+<UserControl x:Class="AegisVPN.Wpf.Views.DashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel>
+
+            <!-- ═══════════════════ connect ring ═══════════════════ -->
+            <StackPanel HorizontalAlignment="Center" Margin="0,8,0,0">
+                <Grid Width="190" Height="190">
+                    <!-- pulsing outer ring (visible while busy) -->
+                    <Ellipse Margin="6" StrokeThickness="3"
+                             Stroke="{StaticResource AccentBrush}">
+                        <Ellipse.Style>
+                            <Style TargetType="Ellipse">
+                                <Setter Property="Opacity" Value="0"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsBusy}" Value="True">
+                                        <DataTrigger.EnterActions>
+                                            <BeginStoryboard x:Name="PulseStoryboard">
+                                                <Storyboard RepeatBehavior="Forever">
+                                                    <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                     From="0.7" To="0.1"
+                                                                     Duration="0:0:1.1" AutoReverse="True"/>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </DataTrigger.EnterActions>
+                                        <DataTrigger.ExitActions>
+                                            <RemoveStoryboard BeginStoryboardName="PulseStoryboard"/>
+                                        </DataTrigger.ExitActions>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Ellipse.Style>
+                    </Ellipse>
+
+                    <!-- status ring: green connected / amber busy / gray idle -->
+                    <Ellipse Margin="6" StrokeThickness="4">
+                        <Ellipse.Style>
+                            <Style TargetType="Ellipse">
+                                <Setter Property="Stroke" Value="{StaticResource TextMutedBrush}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                        <Setter Property="Stroke" Value="{StaticResource GreenBrush}"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsBusy}" Value="True">
+                                        <Setter Property="Stroke" Value="{StaticResource AccentBrush}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Ellipse.Style>
+                    </Ellipse>
+
+                    <Ellipse Fill="{StaticResource CardBrush}"
+                             Stroke="{StaticResource CardBorderBrush}" StrokeThickness="1"
+                             Margin="16"/>
+
+                    <!-- state glyph -->
+                    <TextBlock FontFamily="Segoe MDL2 Assets" FontSize="34"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               Text="&#xE768;">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+                                <Setter Property="Text" Value="&#xE768;"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                        <Setter Property="Text" Value="&#xE71A;"/>
+                                        <Setter Property="Foreground" Value="{StaticResource GreenBrush}"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsBusy}" Value="True">
+                                        <Setter Property="Text" Value="&#xE895;"/>
+                                        <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Grid>
+
+                <Button HorizontalAlignment="Center" Margin="0,14,0,0" MinWidth="170"
+                        Content="{Binding ButtonText}">
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource GhostButtonStyle}">
+                            <Setter Property="Command" Value="{Binding ConnectCommand}"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                    <Setter Property="Command" Value="{Binding DisconnectCommand}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
+
+                <TextBlock Text="{Binding StateLine}" FontFamily="Segoe UI" FontSize="16"
+                           FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,10,0,0"
+                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                <TextBlock Text="{Binding Status.Error}" Style="{StaticResource MutedStyle}"
+                           Foreground="{StaticResource RedBrush}" HorizontalAlignment="Center"
+                           Margin="0,4,0,0" TextWrapping="Wrap" MaxWidth="520"
+                           Visibility="{Binding Status.Error, Converter={StaticResource StringToVisibility}}"/>
+            </StackPanel>
+
+            <!-- ═══════════════════ stats ═══════════════════ -->
+            <UniformGrid Columns="3" Margin="0,20,0,0">
+                <Border Style="{StaticResource CardStyle}" Margin="0,0,8,8">
+                    <StackPanel>
+                        <TextBlock Text="↓ DOWNLOAD" Style="{StaticResource MutedStyle}" FontSize="10"/>
+                        <TextBlock Text="{Binding DownRate}" Style="{StaticResource StatValueStyle}" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource CardStyle}" Margin="8,0,0,8">
+                    <StackPanel>
+                        <TextBlock Text="↑ UPLOAD" Style="{StaticResource MutedStyle}" FontSize="10"/>
+                        <TextBlock Text="{Binding UpRate}" Style="{StaticResource StatValueStyle}" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource CardStyle}" Margin="8,0,0,8">
+                    <StackPanel>
+                        <TextBlock Text="SESSION" Style="{StaticResource MutedStyle}" FontSize="10"/>
+                        <TextBlock Text="{Binding SessionDuration}" Style="{StaticResource StatValueStyle}" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource CardStyle}" Margin="0,8,8,0">
+                    <StackPanel>
+                        <TextBlock Text="LATENCY" Style="{StaticResource MutedStyle}" FontSize="10"/>
+                        <TextBlock Style="{StaticResource StatValueStyle}" Margin="0,4,0,0">
+                            <Run Text="{Binding Status.LatencyMs, Mode=OneWay}"/> ms
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource CardStyle}" Margin="8,8,0,0">
+                    <StackPanel>
+                        <TextBlock Text="HANDSHAKE" Style="{StaticResource MutedStyle}" FontSize="10"/>
+                        <TextBlock Text="{Binding HandshakeAge}" Style="{StaticResource StatValueStyle}" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource CardStyle}" Margin="8,8,0,0">
+                    <StackPanel>
+                        <TextBlock Text="TUNNEL IP" Style="{StaticResource MutedStyle}" FontSize="10"/>
+                        <TextBlock Text="{Binding Status.LocalIp, TargetNullValue=—}" Style="{StaticResource StatValueStyle}" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+
+            <!-- ═══════════════════ quick toggles ═══════════════════ -->
+            <Border Style="{StaticResource CardStyle}" Margin="0,16,0,0">
+                <StackPanel>
+                    <TextBlock Text="QUICK CONTROLS" Style="{StaticResource MutedStyle}" FontSize="10"/>
+                    <UniformGrid Columns="3" Margin="0,12,0,0">
+                        <CheckBox Content="Kill Switch" Style="{StaticResource ToggleSwitchStyle}"
+                                  IsChecked="{Binding Settings.KillSwitch, Mode=TwoWay}"/>
+                        <CheckBox Content="Threat Protection" Style="{StaticResource ToggleSwitchStyle}"
+                                  IsChecked="{Binding Settings.ThreatProtection, Mode=TwoWay}"/>
+                        <CheckBox Content="Obfuscation" Style="{StaticResource ToggleSwitchStyle}"
+                                  IsChecked="{Binding Settings.Obfuscate, Mode=TwoWay}"/>
+                    </UniformGrid>
+                </StackPanel>
+            </Border>
+
+            <!-- ═══════════════════ tunnel details ═══════════════════ -->
+            <Border Style="{StaticResource CardStyle}" Margin="0,16,0,0">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="PROTOCOL" Style="{StaticResource MutedStyle}" FontSize="10"/>
+                        <TextBlock Text="WireGuard · ChaCha20-Poly1305 · Curve25519" Style="{StaticResource BodyStyle}" Margin="0,4,0,0"/>
+                        <TextBlock Text="HOPS" Style="{StaticResource MutedStyle}" FontSize="10" Margin="0,10,0,0"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                            <TextBlock Style="{StaticResource BodyStyle}">
+                                <Run Text="{Binding Status.Hops, Mode=OneWay}"/>
+                            </TextBlock>
+                            <TextBlock Text=" (Double VPN)" Style="{StaticResource BodyStyle}" Foreground="{StaticResource AccentBrush}">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Status.Hops}" Value="2">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </StackPanel>
+                    </StackPanel>
+                    <Button Grid.Column="1" Content="Quick connect" VerticalAlignment="Top"
+                            Style="{StaticResource GhostButtonStyle}"
+                            Command="{Binding QuickConnectCommand}"/>
+                </Grid>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

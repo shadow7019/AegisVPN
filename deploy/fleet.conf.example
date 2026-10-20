@@ -1,0 +1,36 @@
+# AegisVPN fleet definition.
+# Copy to deploy/fleet.conf and fill in YOUR VPS hosts.
+#
+# Format (one node per line):
+#   name,host,role,country,city[,port]
+#
+#   name    node id shown in clients (must be unique in coord)
+#   host    user@ip  for remote deploys over ssh (key auth, sudo),
+#           or the literal "local" for a node deployed on this machine
+#   role    standard | p2p | double-entry | double-exit | obfs
+#   port    optional; defaults 51820 (exit nodes 51821)
+#
+# Double VPN chains: pair one double-entry with one double-exit in DIFFERENT
+# jurisdictions. Clients connect to the entry; the relay service forwards
+# entry subnet 10.8.0.0/24 -> the exit node's 10.8.1.0/24 (see server/relay).
+#
+# Coordination + shared secrets (also accepted as env):
+#   AE_COORD_HOST=coord.example.com:8080
+#   AE_COORD_TOKEN=<token printed by coord on first boot / set in server/.env>
+#   AE_OBFS_KEY=<passphrase shared with obfsd>
+#
+# ── example fleet ──────────────────────────────────────────────────────────
+# # three standard exits
+# us-east-1,root@203.0.113.10,standard,US,Ashburn
+# de-fra-1,root@198.51.100.22,standard,DE,Frankfurt
+# jp-tyo-1,root@192.0.2.77,standard,JP,Tokyo
+#
+# # one Double VPN chain across jurisdictions
+# nl-ams-entry,root@203.0.113.50,double-entry,NL,Amsterdam
+# ch-zrh-exit,root@198.51.100.90,double-exit,CH,Zurich
+#
+# # DPI-resistant obfuscated node (UDP masked on :443)
+# se-sto-obfs,root@192.0.2.140,obfs,SE,Stockholm
+#
+# # P2P-optimized node (torrent-friendly, no logging of peer traffic)
+# sg-p2p-1,root@198.51.100.201,p2p,SG,Singapore

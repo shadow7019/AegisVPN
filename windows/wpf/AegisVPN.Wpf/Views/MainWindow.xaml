@@ -1,0 +1,139 @@
+<Window x:Class="AegisVPN.Wpf.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+        xmlns:vm="clr-namespace:AegisVPN.Wpf.ViewModels"
+        xmlns:views="clr-namespace:AegisVPN.Wpf.Views"
+        Title="AegisVPN"
+        Width="1100" Height="720" MinWidth="880" MinHeight="600"
+        WindowStartupLocation="CenterScreen"
+        WindowStyle="None" ResizeMode="CanResize"
+        Background="{StaticResource WindowBackgroundBrush}">
+
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="48"
+                            ResizeBorderThickness="6"
+                            GlassFrameThickness="0"
+                            CornerRadius="0"
+                            UseAeroCaptionButtons="False"/>
+    </shell:WindowChrome.WindowChrome>
+
+    <Window.Resources>
+        <DataTemplate DataType="{x:Type vm:MainViewModel}">
+            <views:DashboardView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:ServersViewModel}">
+            <views:ServersView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:MeshnetViewModel}">
+            <views:MeshnetView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:BreachViewModel}">
+            <views:BreachView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
+            <views:SettingsView/>
+        </DataTemplate>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="48"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="28"/>
+        </Grid.RowDefinitions>
+
+        <!-- ═══════════════════ title bar ═══════════════════ -->
+        <Grid Grid.Row="0" Background="{StaticResource SidebarBrush}">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
+                <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE72E;" FontSize="16"
+                           Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center"/>
+                <TextBlock Text="AegisVPN" FontFamily="Segoe UI" FontSize="15" FontWeight="SemiBold"
+                           Foreground="{StaticResource TextPrimaryBrush}"
+                           VerticalAlignment="Center" Margin="10,0,0,0"/>
+                <Border Background="{StaticResource InputBgBrush}" CornerRadius="4" Padding="6,1"
+                        VerticalAlignment="Center" Margin="10,0,0,0">
+                    <TextBlock Text="WIREGUARD ENGINE" Style="{StaticResource MutedStyle}" FontSize="10"/>
+                </Border>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"
+                        WindowChrome.IsHitTestVisibleInChrome="True">
+                <Button Style="{StaticResource WindowButtonStyle}" Content="&#xE921;" Click="OnMinimize"/>
+                <Button Style="{StaticResource WindowButtonStyle}" Content="&#xE922;" Click="OnMaximize"/>
+                <Button Style="{StaticResource CloseButtonStyle}" Content="&#xE8BB;" Click="OnClose"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- ═══════════════════ body ═══════════════════ -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="230"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- sidebar -->
+            <Border Grid.Column="0" Background="{StaticResource SidebarBrush}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0" Margin="0,16,0,0">
+                        <RadioButton GroupName="nav" Content="Dashboard" Tag="&#xE80F;" IsChecked="True"
+                                     Style="{StaticResource NavRadioStyle}"
+                                     Command="{Binding ShowDashboardCommand}"/>
+                        <RadioButton GroupName="nav" Content="Servers" Tag="&#xE774;"
+                                     Style="{StaticResource NavRadioStyle}"
+                                     Command="{Binding ShowServersCommand}"/>
+                        <RadioButton GroupName="nav" Content="Meshnet" Tag="&#xE8EA;"
+                                     Style="{StaticResource NavRadioStyle}"
+                                     Command="{Binding ShowMeshnetCommand}"/>
+                        <RadioButton GroupName="nav" Content="Breach Monitor" Tag="&#xE715;"
+                                     Style="{StaticResource NavRadioStyle}"
+                                     Command="{Binding ShowBreachCommand}"/>
+                        <RadioButton GroupName="nav" Content="Settings" Tag="&#xE713;"
+                                     Style="{StaticResource NavRadioStyle}"
+                                     Command="{Binding ShowSettingsCommand}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="1" Margin="20,0,20,16">
+                        <TextBlock Text="FEATURES" Style="{StaticResource MutedStyle}" FontSize="10"/>
+                        <TextBlock Text="Kill Switch · Double VPN · Obfuscation" Style="{StaticResource MutedStyle}"
+                                   Margin="0,4,0,0" TextWrapping="Wrap"/>
+                        <TextBlock Text="Threat Protection · Meshnet" Style="{StaticResource MutedStyle}"/>
+                        <TextBlock Text="SmartPlay · Dark Web Monitor" Style="{StaticResource MutedStyle}"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- content -->
+            <ContentControl Grid.Column="1" Content="{Binding CurrentView}" Margin="24,20,24,12"/>
+        </Grid>
+
+        <!-- ═══════════════════ status bar ═══════════════════ -->
+        <Border Grid.Row="2" Background="{StaticResource SidebarBrush}"
+                BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="0,1,0,0">
+            <Grid Margin="16,0">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Ellipse Width="8" Height="8" VerticalAlignment="Center">
+                        <Ellipse.Style>
+                            <Style TargetType="Ellipse">
+                                <Setter Property="Fill" Value="{StaticResource RedBrush}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding TransportAlive}" Value="True">
+                                        <Setter Property="Fill" Value="{StaticResource GreenBrush}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Ellipse.Style>
+                    </Ellipse>
+                    <TextBlock Text="{Binding DaemonStatusText}" Style="{StaticResource MutedStyle}"
+                               Margin="8,0,0,0"/>
+                </StackPanel>
+                <TextBlock Text="{Binding Status.Endpoint, StringFormat='endpoint: {0}', TargetNullValue='endpoint: —'}"
+                           Style="{StaticResource MutedStyle}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
