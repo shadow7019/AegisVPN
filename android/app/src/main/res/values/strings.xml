@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AegisVPN</string>
+    <string name="notif_channel">AegisVPN tunnel</string>
+    <string name="notif_title">AegisVPN</string>
+    <string name="notif_connecting">Connecting…</string>
+    <string name="notif_connected">Connected — traffic protected</string>
+    <string name="notif_disconnect">Disconnect</string>
+</resources>

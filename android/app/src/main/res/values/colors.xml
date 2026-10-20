@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- AegisVPN dark palette: deep navy + teal accent (#17C7BD). No blue/indigo. -->
+    <color name="navy_950">#FF0A1220</color>
+    <color name="navy_900">#FF0E1726</color>
+    <color name="navy_800">#FF16233A</color>
+    <color name="navy_700">#FF1E2F4D</color>
+    <color name="teal">#FF17C7BD</color>
+    <color name="text_primary">#FFE6EEF8</color>
+    <color name="text_secondary">#FF8CA3C3</color>
+    <color name="ic_launcher_background">#FF0E1726</color>
+</resources>

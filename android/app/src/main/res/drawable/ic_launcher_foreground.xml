@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Teal shield centered in the 66dp adaptive-icon safe zone. -->
+    <path
+        android:fillColor="#FF17C7BD"
+        android:pathData="M54,30 L72,36.5 V50.5 C72,62.8 64.9,71.8 54,76 C43.1,71.8 36,62.8 36,50.5 V36.5 Z" />
+    <!-- Navy check mark. -->
+    <path
+        android:fillColor="#FF0E1726"
+        android:pathData="M50.2,56.6 L44.5,50.9 L47.3,48.1 L50.2,51 L60.7,40.5 L63.5,43.3 Z" />
+</vector>

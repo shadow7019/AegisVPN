@@ -1,0 +1,81 @@
+# AegisVPN macOS app — XcodeGen project definition.
+#
+# Generate the Xcode project with:
+#   cd macos && xcodegen generate
+#
+# Single target: the SwiftUI GUI. The privileged daemon is NOT an embedded
+# helper — the engine binary is installed into /Library/PrivilegedHelperTools
+# by daemon/install-daemon.sh (run from the app's onboarding card via an
+# administrator prompt, or manually with sudo). See README.md.
+
+name: AegisVPN
+options:
+  bundleIdPrefix: net.aegisvpn
+  deploymentTarget:
+    macOS: "13.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    SWIFT_STRICT_CONCURRENCY: minimal
+    MACOSX_DEPLOYMENT_TARGET: "13.0"
+    CODE_SIGN_STYLE: Automatic
+    CODE_SIGN_IDENTITY: "-"            # ad-hoc; replace with a Developer ID for distribution
+    DEVELOPMENT_TEAM: ""
+    ENABLE_HARDENED_RUNTIME: YES
+    GENERATE_INFOPLIST_FILE: NO
+    ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+
+targets:
+  AegisVPN:
+    type: application
+    platform: macOS
+    deploymentTarget: "13.0"
+    sources:
+      - path: AegisVPN
+    info:
+      path: Support/Info.plist
+      properties:
+        CFBundleDisplayName: AegisVPN
+        CFBundleName: AegisVPN
+        CFBundlePackageType: APPL
+        CFBundleShortVersionString: "1.0.0"
+        CFBundleVersion: "1"
+        CFBundleDevelopmentRegion: en
+        LSMinimumSystemVersion: "13.0"
+        LSUIElement: false
+        NSHighResolutionCapable: true
+        NSPrincipalClass: NSApplication
+        NSRequiresAquaSystemAppearance: false
+        NSHumanReadableCopyright: "Copyright © 2025 AegisVPN Project. All rights reserved."
+        ITSAppUsesNonExemptEncryption: false
+    entitlements:
+      path: AegisVPN.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.application-groups:
+          - group.net.aegisvpn
+        com.apple.security.network.client: true
+        # Direct-distribution exception (NOT Mac App Store compatible): lets the
+        # sandboxed GUI reach the root daemon's unix socket under /var/run.
+        com.apple.security.temporary-exception.files.absolute-paths.read-write:
+          - /var/run/aegisvpn.sock
+          - /var/run/aegisvpn/
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: net.aegisvpn.AegisVPN
+        PRODUCT_NAME: AegisVPN
+
+schemes:
+  AegisVPN:
+    build:
+      targets:
+        AegisVPN: all
+    run:
+      config: Debug
+    archive:
+      config: Release

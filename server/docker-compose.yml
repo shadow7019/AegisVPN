@@ -1,0 +1,122 @@
+# AegisVPN server stack: real WireGuard nodes, Double VPN relay,
+# coordination API, Threat Protection DNS, SmartPlay DNS, Tor (Onion over
+# VPN) and the obfuscation relay.
+#
+# Deploy:  ../scripts/server-provision.sh  (fresh Ubuntu/Debian host)
+#   or:    docker compose up -d
+name: aegisvpn
+
+x-wg-common: &wg-common
+  image: lscr.io/linuxserver/wireguard:latest
+  cap_add:
+    - NET_ADMIN
+    - SYS_MODULE
+  environment:
+    - PUID=1000
+    - PGID=1000
+    - TZ=UTC
+  sysctls:
+    - net.ipv4.conf.all.src_valid_mark=1
+  restart: unless-stopped
+
+services:
+  # ---------------------------------------------------------------- nodes
+  node-entry:
+    <<: *wg-common
+    container_name: aegis-node-entry
+    environment:
+      - SERVERURL=entry.example.com   # public IP/DNS of this host
+      - SERVERPORT=51820
+      - PEERS=client-template         # replaced by provisioning script
+      - INTERNAL_SUBNET=10.8.0.0/24
+    volumes:
+      - ./wg-configs/entry:/config
+    ports:
+      - "51820:51820/udp"
+
+  node-exit:
+    <<: *wg-common
+    container_name: aegis-node-exit
+    environment:
+      - SERVERURL=exit.example.com
+      - SERVERPORT=51821
+      - PEERS=relay-template
+      - INTERNAL_SUBNET=10.8.1.0/24
+    volumes:
+      - ./wg-configs/exit:/config
+    ports:
+      - "51821:51821/udp"
+
+  # ------------------------------------------------------------ double vpn
+  relay:
+    build: ./relay
+    container_name: aegis-relay
+    network_mode: host            # needs raw access to both WG subnets
+    environment:
+      - RELAY_LISTEN=0.0.0.0:51820
+      - RELAY_ENTRY_SUBNET=10.8.0.0/24
+      - RELAY_EXIT_SUBNET=10.8.1.0/24
+      - RELAY_EXIT_ENDPOINT=127.0.0.1:51821
+    restart: unless-stopped
+    depends_on:
+      - node-exit
+
+  # ------------------------------------------------------------- coord api
+  coord:
+    build: ./coord
+    container_name: aegis-coord
+    environment:
+      - COORD_TOKEN=change-me-provisioning-rotates-this
+      - COORD_ADDR=:8080
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./coord-data:/data
+    restart: unless-stopped
+
+  # ----------------------------------------------------- threat protection
+  threat-dns:
+    build: ./threatdns
+    container_name: aegis-threat-dns
+    ports:
+      - "53:53/udp"
+      - "53:53/tcp"
+    volumes:
+      - ./blocklists:/blocklists:ro
+    restart: unless-stopped
+
+  # -------------------------------------------------------------- smartdns
+  smartplay:
+    build: ./smartdns
+    container_name: aegis-smartdns
+    environment:
+      - SMARTPLAY_IPS=146.70.99.101,146.70.99.102
+    ports:
+      - "5353:5353/udp"
+    restart: unless-stopped
+
+  # -------------------------------------------------------- onion over vpn
+  # Tor runs inside the exit node's subnet (10.8.2.0/24 in wg-configs/exit).
+  # Clients reach it at 10.8.2.53:9050 after connecting (Onion over VPN).
+  tor:
+    image: dperson/torproxy:latest
+    container_name: aegis-tor
+    environment:
+      - TOR_SocksPort=0.0.0.0:9050
+    ports:
+      - "127.0.0.1:9050:9050"
+    restart: unless-stopped
+
+  # ------------------------------------------------- obfuscated node relay
+  # Masks WireGuard UDP behind DPI-resistant XOR (matches engine internal/obfs).
+  obfsd:
+    build: ./obfsd
+    container_name: aegis-obfsd
+    network_mode: host
+    environment:
+      - AEGIS_OBFS_KEY=change-me-provisioning-rotates-this
+      # front :443 (masked) -> node-entry WG :51820 (plain)
+    command: ["-listen", "0.0.0.0:443", "-upstream", "127.0.0.1:51820"]
+    restart: unless-stopped
+    depends_on:
+      - node-entry

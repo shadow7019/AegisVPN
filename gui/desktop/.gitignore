@@ -1,0 +1,5 @@
+node_modules/
+frontend/dist/
+build/bin/
+ds_error.log
+*.syso

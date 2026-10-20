@@ -1,0 +1,147 @@
+@import "tailwindcss";
+
+/*
+ * AegisVPN design tokens — deep navy/slate "night" scale with a teal/cyan
+ * accent (#17c7bd). No blue-purple gradients; flat dark surfaces only.
+ */
+@theme {
+  --color-night-950: #090e16;
+  --color-night-900: #0e1420;
+  --color-night-850: #111928;
+  --color-night-800: #151f30;
+  --color-night-700: #1c2940;
+  --color-night-600: #273854;
+
+  --color-mist-400: #8fa3c2;
+  --color-mist-300: #c0cde0;
+
+  --color-accent-300: #5ce8df;
+  --color-accent-400: #2adfd4;
+  --color-accent-500: #17c7bd;
+  --color-accent-600: #10a79e;
+
+  --color-ok-500: #35c98e;
+  --color-warn-500: #f2b23e;
+  --color-danger-500: #ef5b69;
+
+  --font-sans: "Inter Variable", "Inter", ui-sans-serif, system-ui,
+    -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    background-color: var(--color-night-900);
+    color: var(--color-mist-300);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    user-select: none;
+  }
+
+  input,
+  textarea {
+    user-select: text;
+  }
+
+  ::selection {
+    background: rgba(23, 199, 189, 0.32);
+  }
+
+  :focus-visible {
+    outline: 2px solid rgba(23, 199, 189, 0.55);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Standard rounded panel used across all views. */
+  .card {
+    border-radius: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(21, 31, 48, 0.66);
+  }
+
+  /* Shimmering placeholder block for loading states. */
+  .skeleton {
+    position: relative;
+    overflow: hidden;
+    border-radius: 0.75rem;
+    background: rgba(255, 255, 255, 0.05);
+  }
+  .skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.06),
+      transparent
+    );
+    animation: shimmer 1.6s infinite;
+  }
+
+  /* Teal glow ring around the connect button while the tunnel is up. */
+  .ring-glow {
+    animation: ringGlow 2.4s ease-in-out infinite;
+  }
+
+  /* Small entrance transition when switching views. */
+  .view-enter {
+    animation: viewIn 0.18s ease-out;
+  }
+}
+
+/* Custom scrollbars (Chromium/WebView2). */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #24314a;
+  border-radius: 8px;
+  border: 2px solid #0e1420;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #31425f;
+}
+
+@keyframes ringGlow {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 6px rgba(23, 199, 189, 0.14),
+      0 0 42px 6px rgba(23, 199, 189, 0.22);
+  }
+  50% {
+    box-shadow:
+      0 0 0 10px rgba(23, 199, 189, 0.1),
+      0 0 64px 12px rgba(23, 199, 189, 0.3);
+  }
+}
+
+@keyframes shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes viewIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

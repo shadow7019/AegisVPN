@@ -1,0 +1,32 @@
+# Binaries
+engine/aegisvpn
+engine/aegisvpn.exe
+*.exe
+*.apk
+*.aab
+*.dmg
+*.aar
+build/
+dist/
+
+# Go
+engine/vendor/
+
+# Android
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+*.keystore
+
+# macOS
+macos/**/xcuserdata/
+macos/DerivedData/
+*.xcworkspace/xcuserdata/
+
+# Node
+node_modules/
+
+# Misc
+.DS_Store
+*.log

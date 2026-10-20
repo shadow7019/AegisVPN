@@ -1,0 +1,5 @@
+# AegisVPN Android build outputs / local artifacts.
+.gradle/
+build/
+local.properties
+app/libs/aegis.aar

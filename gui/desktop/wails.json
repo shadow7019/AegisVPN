@@ -1,0 +1,19 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "AegisVPN",
+  "outputfilename": "AegisVPN",
+  "frontend:dir": "frontend",
+  "frontend:install": "npm",
+  "frontend:build": "npm run build",
+  "frontend:dev:watcher": "npm run dev",
+  "frontend:dev:serverUrl": "auto",
+  "author": {
+    "name": "AegisVPN Project"
+  },
+  "info": {
+    "productName": "AegisVPN",
+    "productVersion": "1.0.0",
+    "copyright": "Copyright © 2025 AegisVPN Project",
+    "comments": "AegisVPN — real WireGuard-based VPN client with Kill Switch, Double VPN, Threat Protection, Split Tunneling and Dark Web Monitor."
+  }
+}

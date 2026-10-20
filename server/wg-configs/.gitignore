@@ -1,0 +1,5 @@
+# Real generated keys/configs are never committed.
+*
+!*/
+!*.example
+!.gitignore

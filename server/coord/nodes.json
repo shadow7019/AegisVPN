@@ -1,0 +1,108 @@
+{
+  "nodes": [
+    {
+      "id": "us-east-1",
+      "country": "US",
+      "city": "Ashburn",
+      "host": "us-east-1.aegisvpn.example",
+      "port": 51820,
+      "probePort": 51823,
+      "pubkey": "ehWTn7n0HrC3sRy1bssZt4doWsdF+aeLfSeO7U5X1QU=",
+      "type": "standard",
+      "load": 0.31,
+      "latencyMs": 88,
+      "lastSeen": 0
+    },
+    {
+      "id": "us-west-2",
+      "country": "US",
+      "city": "Los Angeles",
+      "host": "us-west-2.aegisvpn.example",
+      "port": 51820,
+      "probePort": 51823,
+      "pubkey": "mBYI5dUJjLI9ji0QWdFKsKqiy9kzF4BxoMVSJ21fxl4=",
+      "type": "p2p",
+      "load": 0.17,
+      "latencyMs": 122,
+      "lastSeen": 0
+    },
+    {
+      "id": "de-fra-1",
+      "country": "DE",
+      "city": "Frankfurt",
+      "host": "de-fra-1.aegisvpn.example",
+      "port": 51820,
+      "probePort": 51823,
+      "pubkey": "6N218R/T3kTbOk/uw616u7aaHIg8Z3Kwvh7M+Egw/mc=",
+      "type": "double",
+      "load": 0.54,
+      "latencyMs": 41,
+      "lastSeen": 0
+    },
+    {
+      "id": "nl-ams-1",
+      "country": "NL",
+      "city": "Amsterdam",
+      "host": "nl-ams-1.aegisvpn.example",
+      "port": 51820,
+      "probePort": 51823,
+      "pubkey": "uRN9HD10+WOeJy1PjSJOBveojXYPsQtVsXb8VTf/4AQ=",
+      "type": "standard",
+      "load": 0.42,
+      "latencyMs": 37,
+      "lastSeen": 0
+    },
+    {
+      "id": "ro-buh-1",
+      "country": "RO",
+      "city": "Bucharest",
+      "host": "ro-buh-1.aegisvpn.example",
+      "port": 51820,
+      "probePort": 51823,
+      "pubkey": "UzmchPGpzMnC/+KdNxzU5kK4GL3HGTpTsPqR2x5YQQk=",
+      "type": "onion",
+      "load": 0.26,
+      "latencyMs": 63,
+      "lastSeen": 0
+    },
+    {
+      "id": "sg-sin-1",
+      "country": "SG",
+      "city": "Singapore",
+      "host": "sg-sin-1.aegisvpn.example",
+      "port": 51820,
+      "probePort": 51823,
+      "pubkey": "eAX2lp7KFHuayNv7ML2wXDKZ3SZV+NfGR9gFo+KcH6E=",
+      "type": "obfuscated",
+      "load": 0.38,
+      "latencyMs": 174,
+      "lastSeen": 0
+    },
+    {
+      "id": "uk-lon-1",
+      "country": "UK",
+      "city": "London",
+      "host": "uk-lon-1.aegisvpn.example",
+      "port": 51820,
+      "probePort": 51823,
+      "pubkey": "D4IBCDD23LCm8bT0OiDsiSas6irovGIq6s40Rtxjqco=",
+      "type": "dedicated",
+      "load": 0.09,
+      "latencyMs": 29,
+      "lastSeen": 0
+    },
+    {
+      "id": "se-sto-1",
+      "country": "SE",
+      "city": "Stockholm",
+      "host": "se-sto-1.aegisvpn.example",
+      "port": 51820,
+      "probePort": 51823,
+      "pubkey": "O6LwheMxgCh+oJNIBqWnPI/vmD2EcX4lKFHGFlkP2Jk=",
+      "type": "p2p",
+      "load": 0.21,
+      "latencyMs": 52,
+      "lastSeen": 0
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>net.aegisvpn.daemon</string>
+
+	<key>ProgramArguments</key>
+	<array>
+		<string>/Library/PrivilegedHelperTools/net.aegisvpn.daemon</string>
+		<string>daemon</string>
+		<string>--socket</string>
+		<string>/var/run/aegisvpn.sock</string>
+	</array>
+
+	<key>EnvironmentVariables</key>
+	<dict>
+		<!-- App root used by the engine's $appRoot/engine.sock convention
+		     (PROTOCOL.md section 2). The GUI probes /var/run/aegisvpn.sock
+		     first and /var/run/aegisvpn/engine.sock second. -->
+		<key>AEGISVPN_APP_ROOT</key>
+		<string>/var/run/aegisvpn</string>
+	</dict>
+
+	<key>UserName</key>
+	<string>root</string>
+
+	<key>RunAtLoad</key>
+	<true/>
+
+	<key>KeepAlive</key>
+	<true/>
+
+	<key>ThrottleInterval</key>
+	<integer>5</integer>
+
+	<key>ProcessType</key>
+	<string>Background</string>
+
+	<key>StandardOutPath</key>
+	<string>/Library/Logs/aegisvpn-daemon.log</string>
+
+	<key>StandardErrorPath</key>
+	<string>/Library/Logs/aegisvpn-daemon.err.log</string>
+
+	<key>AssociatedBundleIdentifiers</key>
+	<string>net.aegisvpn.AegisVPN</string>
+</dict>
+</plist>
