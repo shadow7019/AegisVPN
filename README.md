@@ -167,6 +167,34 @@ client profile emission. See `deploy/README.md`.
 
 ---
 
+## Releases
+
+Official releases: **https://github.com/shadow7019/AegisVPN/releases**
+
+Publishing a release is fully automated by `.github/workflows/release.yml` —
+push a tag, GitHub does the rest:
+
+```bash
+# 1. put the built artifacts + RELEASES.md notes into releases/vX.Y.Z/
+git add releases/vX.Y.Z && git commit -m "release: vX.Y.Z"
+
+# 2. push main, then tag it — that tag push is the trigger
+git push origin main
+git tag -a vX.Y.Z -m "AegisVPN vX.Y.Z" && git push origin vX.Y.Z
+```
+
+The workflow then:
+
+* publishes the GitHub Release with the changelog taken from
+  `releases/<tag>/RELEASES.md` plus auto-generated commit notes,
+* attaches every file from `releases/<tag>/` as a release asset
+  (dmg / exe / apk / zips / SHA256SUMS / installer),
+* cross-compiles the engine CLI for linux, windows and macOS (amd64 + arm64)
+  and attaches those binaries too.
+
+No secrets required — the workflow uses the built-in `GITHUB_TOKEN` with
+`contents: write`.
+
 ## Pushing to GitHub
 
 The repo remote is `git@github.com:shadow7019/AegisVPN.git`. The sandbox ships no ssh
