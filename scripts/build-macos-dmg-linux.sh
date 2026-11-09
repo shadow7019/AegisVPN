@@ -31,12 +31,12 @@ DIST="$ROOT/dist"
 WORK="${TMPDIR:-/tmp}/aegisvpn-macos-build"
 
 GO_BIN="${GO_BIN:-go}"
-HFSPLUS="${HFSPLUS:-$HOME/tools/libdmg-hfsplus/build/hfsplus}"
-DMG_TOOL="${DMG_TOOL:-$HOME/tools/libdmg-hfsplus/build/dmg}"
+HFSPLUS="${HFSPLUS:-$HOME/tools/libdmg-hfsplus/build/hfs/hfsplus}"
+DMG_TOOL="${DMG_TOOL:-$HOME/tools/libdmg-hfsplus/build/dmg/dmg}"
 MKFS_HFSPLUS="${MKFS_HFSPLUS:-$HOME/tools/hfs-root/sbin/mkfs.hfsplus}"
 RCODESIGN="${RCODESIGN:-$HOME/tools/rcodesign/rcodesign}"
 
-APP_VERSION="1.2.1"
+APP_VERSION="1.3.0"
 IMAGE_MB=96
 
 log()  { printf '\033[1;36m[macos-dmg]\033[0m %s\n' "$*"; }
@@ -51,22 +51,19 @@ rm -rf "$WORK"
 mkdir -p "$WORK" "$DIST"
 
 # ---------------------------------------------------------------------------
-# 1+2. Frontend build -> embeddable UI
-log "building frontend (bun)"
-( cd "$ROOT/gui/desktop/frontend" &&
-  { [ -d node_modules ] || bun install; } &&
-  bun run build )
-rm -rf "$ROOT/gui/desktop/webapp/ui"
-cp -R "$ROOT/gui/desktop/frontend/dist" "$ROOT/gui/desktop/webapp/ui"
-
-# ---------------------------------------------------------------------------
-# 3. Engine server binaries (both architectures)
+# 1. Engine server binaries (both architectures)
 log "building aegisvpn-server darwin/amd64 + arm64"
 ( cd "$ROOT/gui/desktop" &&
   CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 "$GO_BIN" build -trimpath \
       -ldflags "-s -w" -o "$WORK/darwin-amd64" ./cmd/aegisvpn-server &&
   CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 "$GO_BIN" build -trimpath \
       -ldflags "-s -w" -o "$WORK/darwin-arm64" ./cmd/aegisvpn-server )
+log "building aegisvpn CLI darwin/amd64 + arm64"
+( cd "$ROOT/engine" &&
+  CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 "$GO_BIN" build -trimpath \
+      -ldflags "-s -w" -o "$WORK/cli-amd64" ./cmd/aegisvpn &&
+  CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 "$GO_BIN" build -trimpath \
+      -ldflags "-s -w" -o "$WORK/cli-arm64" ./cmd/aegisvpn )
 
 # ---------------------------------------------------------------------------
 # 4. Universal main executable + CLI copies
@@ -74,20 +71,19 @@ log "merging universal binary (macho-merge)"
 python3 "$ROOT/scripts/macho-merge.py" "$WORK/AegisVPN" \
     "$WORK/darwin-amd64" "$WORK/darwin-arm64"
 
-# CLI copies for terminal users (single-arch, launched via uname -m wrapper)
-cp "$WORK/darwin-amd64" "$WORK/aegisvpn-darwin-amd64"
-cp "$WORK/darwin-arm64" "$WORK/aegisvpn-darwin-arm64"
+# universal CLI for terminal users (one binary, runs on both arches)
+log "merging universal CLI (macho-merge)"
+python3 "$ROOT/scripts/macho-merge.py" "$WORK/aegisvpn-cli" "$WORK/cli-amd64" "$WORK/cli-arm64"
 
 # ---------------------------------------------------------------------------
 # 5. Assemble AegisVPN.app
 APP="$WORK/AegisVPN.app"
 log "assembling $APP"
 mkdir -p "$APP/Contents/MacOS/cli" "$APP/Contents/Resources"
-chmod 755 "$WORK/AegisVPN" "$WORK/aegisvpn-darwin-amd64" "$WORK/aegisvpn-darwin-arm64"
+chmod 755 "$WORK/AegisVPN" "$WORK/aegisvpn-cli"
 cp "$WORK/AegisVPN" "$APP/Contents/MacOS/AegisVPN"
-cp "$WORK/aegisvpn-darwin-amd64" "$APP/Contents/MacOS/cli/aegisvpn-darwin-amd64"
-cp "$WORK/aegisvpn-darwin-arm64" "$APP/Contents/MacOS/cli/aegisvpn-darwin-arm64"
-cp "$ROOT/gui/desktop/webapp/nodes.json" "$APP/Contents/Resources/nodes.json"
+cp "$WORK/aegisvpn-cli" "$APP/Contents/MacOS/cli/aegisvpn"
+cp "$ROOT/server/coord/nodes.json" "$APP/Contents/Resources/nodes.json"
 cp "$ROOT/assets/macos/logo.icns" "$APP/Contents/Resources/logo.icns" 2>/dev/null \
   || cp "$HOME/tools/logo.icns" "$APP/Contents/Resources/logo.icns"
 
@@ -140,6 +136,10 @@ INSTALL
      at http://127.0.0.1:8080
 
 FEATURES
+  * FREE PUBLIC RELAYS — one-click connect from the dashboard "Public
+    relays" tab (VPNGate network, live reachability checks). The engine
+    fetches the profile and connects automatically. CLI:
+    Contents/MacOS/cli/aegisvpn relays connect --country JP
   * 80 WireGuard nodes in 56 countries (bundled registry, live updates)
   * Kill Switch, Threat Protection (DNS filtering), Obfuscation
   * Double VPN (two-hop chains), P2P / Onion / dedicated node types
@@ -161,8 +161,8 @@ IF THE APP STILL WILL NOT OPEN
   and your browser opens the dashboard automatically.
 
 CLI
-  /Applications/AegisVPN.app/Contents/MacOS/cli/aegisvpn-darwin-$(uname -m)
-  commands: connect | disconnect | status | nodes | daemon | version
+  /Applications/AegisVPN.app/Contents/MacOS/cli/aegisvpn
+  commands: connect | disconnect | status | nodes | daemon | relays | version
 
 Logs:  /var/root/Library/Logs/AegisVPN-server.log (elevated run)
        ~/Library/Logs/                            (fallback run)
@@ -194,30 +194,35 @@ dd if=/dev/zero of="$IMG" bs=1M count="$IMAGE_MB" 2>/dev/null
 "$MKFS_HFSPLUS" -v "AegisVPN" "$IMG"
 
 log "populating HFS+ volume"
+hsymlink() { "$HFSPLUS" "$IMG" symlink "$1" "$2"; }
 hmkdir() { "$HFSPLUS" "$IMG" mkdir "$1"; }
 hadd()   { "$HFSPLUS" "$IMG" add "$1" "$2"; }
 hchmod() { "$HFSPLUS" "$IMG" chmod "$1" "$2"; }
 
+hsymlink /Applications /Applications
 hmkdir /AegisVPN.app
+hsymlink /Applications /Applications
 hmkdir /AegisVPN.app/Contents
+hsymlink /Applications /Applications
 hmkdir /AegisVPN.app/Contents/MacOS
+hsymlink /Applications /Applications
 hmkdir /AegisVPN.app/Contents/MacOS/cli
+hsymlink /Applications /Applications
 hmkdir /AegisVPN.app/Contents/Resources
+hsymlink /Applications /Applications
 hmkdir /AegisVPN.app/Contents/_CodeSignature
 
 hadd "$APP/Contents/Info.plist"        /AegisVPN.app/Contents/Info.plist
 hadd "$APP/Contents/PkgInfo"           /AegisVPN.app/Contents/PkgInfo
 hadd "$APP/Contents/_CodeSignature/CodeResources" /AegisVPN.app/Contents/_CodeSignature/CodeResources
 hadd "$APP/Contents/MacOS/AegisVPN"    /AegisVPN.app/Contents/MacOS/AegisVPN
-hadd "$APP/Contents/MacOS/cli/aegisvpn-darwin-amd64" /AegisVPN.app/Contents/MacOS/cli/aegisvpn-darwin-amd64
-hadd "$APP/Contents/MacOS/cli/aegisvpn-darwin-arm64" /AegisVPN.app/Contents/MacOS/cli/aegisvpn-darwin-arm64
+hadd "$APP/Contents/MacOS/cli/aegisvpn" /AegisVPN.app/Contents/MacOS/cli/aegisvpn
 hadd "$APP/Contents/Resources/logo.icns"  /AegisVPN.app/Contents/Resources/logo.icns
 hadd "$APP/Contents/Resources/nodes.json" /AegisVPN.app/Contents/Resources/nodes.json
 hadd "$APP/Contents/Resources/README-FIRST.txt" /AegisVPN.app/Contents/Resources/README-FIRST.txt
 
 hchmod 755 /AegisVPN.app/Contents/MacOS/AegisVPN
-hchmod 755 /AegisVPN.app/Contents/MacOS/cli/aegisvpn-darwin-amd64
-hchmod 755 /AegisVPN.app/Contents/MacOS/cli/aegisvpn-darwin-arm64
+hchmod 755 /AegisVPN.app/Contents/MacOS/cli/aegisvpn
 
 log "wrapping UDIF (UDZO) DMG"
 "$DMG_TOOL" build "$IMG" "$DMG_OUT"
@@ -248,8 +253,7 @@ test_bundle_file /AegisVPN.app/Contents/Info.plist                       "$APP/C
 test_bundle_file /AegisVPN.app/Contents/PkgInfo                          "$APP/Contents/PkgInfo"
 test_bundle_file /AegisVPN.app/Contents/_CodeSignature/CodeResources     "$APP/Contents/_CodeSignature/CodeResources"
 test_bundle_file /AegisVPN.app/Contents/MacOS/AegisVPN                   "$APP/Contents/MacOS/AegisVPN"
-test_bundle_file /AegisVPN.app/Contents/MacOS/cli/aegisvpn-darwin-amd64  "$APP/Contents/MacOS/cli/aegisvpn-darwin-amd64"
-test_bundle_file /AegisVPN.app/Contents/MacOS/cli/aegisvpn-darwin-arm64  "$APP/Contents/MacOS/cli/aegisvpn-darwin-arm64"
+test_bundle_file /AegisVPN.app/Contents/MacOS/cli/aegisvpn               "$APP/Contents/MacOS/cli/aegisvpn"
 test_bundle_file /AegisVPN.app/Contents/Resources/logo.icns              "$APP/Contents/Resources/logo.icns"
 test_bundle_file /AegisVPN.app/Contents/Resources/nodes.json             "$APP/Contents/Resources/nodes.json"
 test_bundle_file /AegisVPN.app/Contents/Resources/README-FIRST.txt       "$APP/Contents/Resources/README-FIRST.txt"
@@ -259,10 +263,12 @@ MODES=$("$HFSPLUS" "$VDIR/verify.hfs" ls /AegisVPN.app/Contents/MacOS)
 echo "$MODES" | grep -q "100755 .* AegisVPN" || fail "main binary lost +x inside DMG"
 
 # Every Mach-O must carry an ADHOC signature and the bundle identifier.
-for BIN in AegisVPN cli/aegisvpn-darwin-amd64 cli/aegisvpn-darwin-arm64; do
+for BIN in AegisVPN cli/aegisvpn; do
   "$RCODESIGN" print-signature-info "$APP/Contents/MacOS/$BIN" | grep -q "ADHOC" \
     || fail "signature not ADHOC after packaging: $BIN"
 done
+
+"$HFSPLUS" "$VDIR/verify.hfs" ls / | grep -q "Applications" || fail "Applications symlink missing in DMG"
 
 log "round-trip verification PASSED — 9 files byte-identical, +x intact, ADHOC signatures intact"
 
