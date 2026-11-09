@@ -37,3 +37,6 @@ server/obfsd/obfsd
 server/relay/relay
 server/smartdns/smartdns
 server/threatdns/threatdns
+
+# release artifacts under releases/ are tracked on purpose
+!releases/**

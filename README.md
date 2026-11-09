@@ -170,11 +170,21 @@ client profile emission. See `deploy/README.md`.
 ## Pushing to GitHub
 
 The repo remote is `git@github.com:shadow7019/AegisVPN.git`. The sandbox ships no ssh
-client, so `scripts/push.sh` uses a tiny Go-based ssh transport:
+client and its home directory can be reset, so `scripts/push.sh` regenerates a fresh
+deploy key whenever that happens. **Current active deploy key** (register it once):
 
-1. Copy `~/.ssh/id_ed25519.pub` into GitHub → repo *Deploy keys* (enable **write**) or
-   account SSH keys.
-2. `./scripts/push.sh`
+```
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINs7dWl6o+rFxKbt0K93rgP11gaL1YJLZd/RMqFUCzJj aegisvpn-deploy-key
+```
+
+* Repo key: <https://github.com/shadow7019/AegisVPN/settings/keys> → *Add deploy key* →
+  enable **Allow write access**
+* or Account key: <https://github.com/settings/keys> → *New SSH key*
+
+Then: `./scripts/push.sh`
+
+> Older keys (`…QBlpwYkm`, `…mKPz`) are retired — their private halves were lost in
+> sandbox resets and can no longer authenticate. Register the key above instead.
 
 ---
 

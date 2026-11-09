@@ -1,27 +1,32 @@
 #!/usr/bin/env bash
-# Push AegisVPN to GitHub once SSH auth is available.
+# Push AegisVPN to GitHub (git@github.com:shadow7019/AegisVPN.git).
 #
-# The sandbox generates ~/.ssh/id_ed25519 whose PUBLIC key must be added to
-# GitHub first (see README section "Pushing to GitHub"):
+# ONE-TIME SETUP — the deploy key below must be registered on GitHub:
 #
-#   ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFLI+RT70Ld8wJKE2dWYw+Tlgh1xoXtE184AQBlpwYkm
+#   Public key (ed25519, fingerprint SHA256:4lDodY/bGuImTgmrz5ZICwr+GSRLZXOVz9gn0twK1Ak):
 #
-#   Repo path:  Settings → Deploy keys → Add deploy key → enable "Allow write access"
-#   or Account: Settings → SSH and GPG keys → New SSH key
+#     ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINs7dWl6o+rFxKbt0K93rgP11gaL1YJLZd/RMqFUCzJj aegisvpn-deploy-key
+#
+#   Repo key:  https://github.com/shadow7019/AegisVPN/settings/keys
+#              → Add deploy key → paste → enable "Allow write access"
+#   Account:   https://github.com/settings/keys → New SSH key (also works)
 #
 # Then run:  ./scripts/push.sh
 set -euo pipefail
 cd "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-SSH_BIN="${GITSSH:-$HOME/tools/bin/gitssh}"
+# find an ssh client: system first, then the portable copy under ~/tools
+SSH_BIN=""
 if command -v ssh >/dev/null 2>&1; then
-  export GIT_SSH_COMMAND="ssh"
-elif [[ -x "$SSH_BIN" ]]; then
-  export GIT_SSH_COMMAND="$SSH_BIN"
+  SSH_BIN="$(command -v ssh)"
+elif [[ -x "$HOME/tools/openssh/usr/bin/ssh" ]]; then
+  SSH_BIN="$HOME/tools/openssh/usr/bin/ssh"
 else
-  echo "no ssh client found" >&2
+  echo "no ssh client found (apt-get download openssh-client && dpkg -x)" >&2
   exit 1
 fi
+
+export GIT_SSH_COMMAND="$SSH_BIN -i $HOME/.ssh/id_ed25519 -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
 
 git push -u origin main
 echo "pushed: $(git log --oneline -1)"
