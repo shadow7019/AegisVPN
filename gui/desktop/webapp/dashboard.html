@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AegisVPN — Dashboard</title>
+<style>
+  :root{
+    --bg:#070b14; --panel:#0d1424; --panel2:#111a2e; --line:#1d2a44;
+    --text:#e8eef9; --muted:#8fa3c4; --accent:#39d0ff; --ok:#3ddc97; --warn:#ffb454; --bad:#ff6b6b;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,sans-serif}
+  .wrap{max-width:980px;margin:0 auto;padding:24px 20px 80px}
+  header{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+  .logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#39d0ff,#2b7fff);display:grid;place-items:center;font-weight:900;color:#04121f}
+  h1{font-size:20px;margin:0}
+  .pill{margin-left:auto;font-family:var(--mono);font-size:12px;padding:5px 12px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+  .pill.ok{color:var(--ok);border-color:var(--ok)}
+  .pill.on{color:var(--accent);border-color:var(--accent)}
+  .tabs{display:flex;gap:8px;margin-bottom:18px}
+  .tab{padding:8px 16px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;font-weight:600}
+  .tab.active{background:var(--panel2);color:var(--text);border-color:#2a3c60}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .stat{display:inline-block;font-family:var(--mono);font-size:13px;color:var(--muted);margin-right:18px}
+  .stat b{color:var(--text);font-weight:600}
+  button{font:inherit;font-weight:600;border-radius:10px;padding:9px 18px;cursor:pointer;border:1px solid var(--line);background:var(--panel2);color:var(--text)}
+  button:hover{border-color:#2a3c60}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#04121f}
+  button.danger{background:transparent;border-color:var(--bad);color:var(--bad)}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  select,input[type=text]{font:inherit;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:9px 12px}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th{color:var(--muted);font-weight:600;text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+  td{padding:9px 10px;border-bottom:1px solid #14203a}
+  tr:hover td{background:#0f1930}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px}
+  .on{background:var(--ok)} .off{background:var(--bad)}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 14px}
+  .chip{font-family:var(--mono);font-size:12px;padding:4px 11px;border-radius:999px;border:1px solid var(--line);color:var(--muted);cursor:pointer}
+  .chip.active{color:var(--accent);border-color:var(--accent)}
+  pre{background:#0a1120;border:1px solid var(--line);border-radius:10px;padding:12px;font-family:var(--mono);font-size:12px;max-height:260px;overflow:auto;color:#b9cae8}
+  .muted{color:var(--muted);font-size:13px}
+  .hidden{display:none}
+  .banner{padding:10px 14px;border-radius:10px;margin-bottom:14px;font-size:14px}
+  .banner.ok{background:#0c2419;border:1px solid var(--ok);color:var(--ok)}
+  .banner.bad{background:#2a1214;border:1px solid var(--bad);color:var(--bad)}
+  footer{margin-top:26px;color:var(--muted);font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">A</div>
+    <h1>AegisVPN</h1>
+    <span class="pill" id="enginePill">checking…</span>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="relays">Public relays · free</button>
+    <button class="tab" data-tab="fleet">Private fleet</button>
+    <button class="tab" data-tab="log">Session log</button>
+  </div>
+
+  <div id="banner"></div>
+
+  <!-- PUBLIC RELAYS -->
+  <section id="tab-relays">
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <div>
+          <strong>Connect to a free public relay — one click, no downloads</strong>
+          <div class="muted">Verified community relays (VPNGate network). The app fetches the profile and connects automatically.</div>
+        </div>
+        <button id="btnBest" class="primary">⚡ Quick connect (best relay)</button>
+      </div>
+      <div class="muted" id="ovpnHint" style="margin-top:10px"></div>
+    </div>
+    <div class="card">
+      <div class="chips" id="chips"></div>
+      <div style="overflow:auto;max-height:420px">
+        <table>
+          <thead><tr><th></th><th>Country</th><th>Relay</th><th>Endpoint</th><th>Ping</th><th>Speed</th><th></th></tr></thead>
+          <tbody id="relayRows"><tr><td colspan="7" class="muted">loading relays…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRIVATE FLEET -->
+  <section id="tab-fleet" class="hidden">
+    <div class="card">
+      <strong>WireGuard fleet</strong>
+      <div class="muted">Your private 80-node AegisVPN fleet (real wireguard-go tunnel).</div>
+      <div class="row" style="margin-top:14px">
+        <select id="nodeSel" style="min-width:280px"><option>loading nodes…</option></select>
+        <label class="muted"><input type="checkbox" id="ks" checked> Kill switch</label>
+        <button id="btnTunnelConnect" class="primary">Connect</button>
+        <button id="btnTunnelDisconnect" class="danger">Disconnect</button>
+      </div>
+      <div style="margin-top:14px">
+        <span class="stat">state <b id="tState">—</b></span>
+        <span class="stat">node <b id="tNode">—</b></span>
+        <span class="stat">local IP <b id="tIP">—</b></span>
+        <span class="stat">endpoint <b id="tEP">—</b></span>
+        <span class="stat">rx <b id="tRx">—</b></span>
+        <span class="stat">tx <b id="tTx">—</b></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- LOG -->
+  <section id="tab-log" class="hidden">
+    <div class="card">
+      <strong>Relay session log</strong>
+      <pre id="logTail">no active relay session</pre>
+      <div class="muted" id="logMeta"></div>
+    </div>
+  </section>
+
+  <footer>AegisVPN local dashboard · listens on 127.0.0.1 only · never routes your traffic anywhere but the VPN.</footer>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let relayCache = [];
+let country = "";
+let busy = false;
+
+// tabs
+document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => {
+  document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
+  t.classList.add("active");
+  ["relays","fleet","log"].forEach(n => $("tab-"+n).classList.toggle("hidden", n !== t.dataset.tab));
+}));
+
+function banner(kind, msg){
+  $("banner").innerHTML = msg ? `<div class="banner ${kind}">${msg}</div>` : "";
+}
+
+async function j(url, opts){
+  const r = await fetch(url, opts);
+  const b = await r.json();
+  if(!r.ok) throw new Error(b.error || r.status);
+  return b;
+}
+
+function fmtSpeed(bps){
+  if(bps >= 1e9) return (bps/1e9).toFixed(1)+" Gb/s";
+  if(bps >= 1e6) return (bps/1e6).toFixed(0)+" Mb/s";
+  return Math.round(bps/1e3)+" kb/s";
+}
+
+async function refreshStatus(){
+  try{
+    const s = await j("/api/relays/status");
+    const pill = $("enginePill");
+    if(s.connected){
+      pill.textContent = "RELAY · " + (s.session?.hostname || "connected");
+      pill.className = "pill on";
+      $("logTail").textContent = (s.log_tail||[]).join("\n") || "…";
+      $("logMeta").textContent = s.session ? `pid ${s.session.pid} · since ${new Date(s.session.started_at).toLocaleString()} · ${s.session.endpoint} · ${s.session.binary}` : "";
+    }else{
+      const t = await j("/api/status").catch(()=>null);
+      if(t && t.state === "connected"){
+        pill.textContent = "FLEET · " + (t.node || "connected");
+        pill.className = "pill on";
+      }else{
+        pill.textContent = "unprotected";
+        pill.className = "pill";
+      }
+      $("logTail").textContent = "no active relay session";
+      $("logMeta").textContent = "";
+    }
+    if(s.openvpn){
+      $("ovpnHint").textContent = s.openvpn.found
+        ? `OpenVPN core: ${s.openvpn.path}`
+        : `⚠ ${s.openvpn.hint}`;
+    }
+  }catch(e){ console.warn(e); }
+}
+
+async function refreshRelays(){
+  try{
+    const q = new URLSearchParams({country: country || "any", probe: "1", limit: "120"});
+    const b = await j("/api/relays?" + q);
+    relayCache = b.relays || [];
+    // chips
+    const chips = Object.entries(b.countries||{}).sort((a,b2)=>a[0].localeCompare(b2[0]));
+    $("chips").innerHTML = `<span class="chip ${!country?"active":""}" data-cc="">ANY</span>` +
+      chips.map(([cc,name])=>`<span class="chip ${country===cc?"active":""}" data-cc="${cc}" title="${name}">${cc}</span>`).join("");
+    document.querySelectorAll(".chip").forEach(c => c.addEventListener("click", () => {
+      country = c.dataset.cc; refreshRelays();
+    }));
+    // rows
+    if(!relayCache.length){
+      $("relayRows").innerHTML = `<tr><td colspan="7" class="muted">no relays match</td></tr>`;
+      return;
+    }
+    $("relayRows").innerHTML = relayCache.map(r => `
+      <tr>
+        <td><span class="dot ${r.alive?"on":"off"}"></span></td>
+        <td><b>${r.country_code}</b> <span class="muted">${(r.country_name||"").slice(0,14)}</span></td>
+        <td>${r.hostname}</td>
+        <td style="font-family:var(--mono);font-size:12px">${r.ip}:${r.port}/${r.proto}</td>
+        <td style="font-family:var(--mono)">${r.probe_ms_now||r.probe_ms||r.ping_ms} ms</td>
+        <td style="font-family:var(--mono)">${fmtSpeed(r.speed_bps||0)}</td>
+        <td><button data-host="${r.hostname}" class="btnConnect ${r.alive?"primary":""}" ${r.alive?"":"disabled"}>Connect</button></td>
+      </tr>`).join("");
+    document.querySelectorAll(".btnConnect").forEach(b => b.addEventListener("click", () => connectRelay(b.dataset.host, b)));
+  }catch(e){
+    $("relayRows").innerHTML = `<tr><td colspan="7" class="muted">relay index unavailable: ${e.message}</td></tr>`;
+  }
+}
+
+async function connectRelay(host, btn){
+  if(busy) return; busy = true;
+  const old = btn ? btn.textContent : "";
+  if(btn){ btn.disabled = true; btn.textContent = "connecting…"; }
+  banner("", "");
+  try{
+    const b = await j("/api/relays/connect", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({hostname: host})
+    });
+    if(b.connected){
+      banner("ok", `Connected to <b>${b.session.hostname}</b> (${b.session.endpoint}) — your traffic now exits through the relay.`);
+    }else{
+      banner("bad", `Relay did not complete the handshake. Last log: ${(b.log_tail||[]).slice(-1)[0] || "unknown"}`);
+    }
+  }catch(e){
+    banner("bad", e.message);
+  }
+  busy = false;
+  if(btn){ btn.disabled = false; btn.textContent = old; }
+  refreshStatus();
+}
+
+$("btnBest").addEventListener("click", () => connectRelay("", null));
+
+// fleet
+async function refreshFleet(){
+  try{
+    const nodes = await j("/api/nodes");
+    const sel = $("nodeSel");
+    if(Array.isArray(nodes) && nodes.length){
+      const cur = sel.value;
+      sel.innerHTML = nodes.map(n => `<option value="${n.id ?? n.Id ?? ""}">${n.name ?? n.Name ?? n.id ?? n}</option>`).join("");
+      if(cur) sel.value = cur;
+    }else{
+      sel.innerHTML = `<option value="">no fleet nodes on this device</option>`;
+    }
+  }catch(e){
+    $("nodeSel").innerHTML = `<option value="">fleet registry unavailable</option>`;
+  }
+  try{
+    const t = await j("/api/status");
+    $("tState").textContent = t.state; $("tNode").textContent = t.node || "—";
+    $("tIP").textContent = t.localIp || "—"; $("tEP").textContent = t.endpoint || "—";
+    $("tRx").textContent = (t.rxBytes/1048576).toFixed(1)+" MB"; $("tTx").textContent = (t.txBytes/1048576).toFixed(1)+" MB";
+  }catch(e){}
+}
+
+$("btnTunnelConnect").addEventListener("click", async () => {
+  const node = $("nodeSel").value;
+  if(!node) return banner("bad", "no node selected");
+  try{
+    const t = await j("/api/tunnel/connect", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({node, killswitch: $("ks").checked})});
+    banner("ok", `Fleet tunnel up via <b>${t.node || node}</b>.`);
+  }catch(e){ banner("bad", e.message); }
+  refreshFleet(); refreshStatus();
+});
+$("btnTunnelDisconnect").addEventListener("click", async () => {
+  try{ await j("/api/tunnel/disconnect", {method:"POST"}); banner("ok","Fleet tunnel down."); }
+  catch(e){ banner("bad", e.message); }
+  refreshFleet(); refreshStatus();
+});
+
+refreshStatus(); refreshRelays(); refreshFleet();
+setInterval(refreshStatus, 4000);
+setInterval(refreshRelays, 30000);
+setInterval(refreshFleet, 8000);
+</script>
+</body>
+</html>

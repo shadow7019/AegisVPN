@@ -167,6 +167,20 @@ client profile emission. See `deploy/README.md`.
 
 ---
 
+## Free public relays — connect without downloading
+
+AegisVPN connects to the free VPNGate community relay network **from inside
+the app** — no .ovpn download, no third-party client, no manual import:
+
+* `aegisvpn relays list --country JP` — browse the live, reachability-verified
+  relay index (companion portal first, VPNGate CSV fallback)
+* `aegisvpn relays connect --country JP` — pick the best relay, fetch the
+  profile, spawn the OpenVPN core and confirm the handshake automatically
+* desktop bundles ship a local dashboard (`http://127.0.0.1:8080`) with a
+  **Public relays** tab: one click to connect, live log, instant disconnect
+* engine finds the OpenVPN core automatically (`AEGIS_OPENVPN` → bundled →
+  `PATH` → Homebrew / Program Files)
+
 ## Releases
 
 Official releases: **https://github.com/shadow7019/AegisVPN/releases**
